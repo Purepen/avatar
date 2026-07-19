@@ -1,0 +1,239 @@
+/* ============================================================================
+   AVATAR — Design Tokens (single source of truth)
+   Digital Twin platform. Dark mode is the hero; light is fully supported.
+   Theme is controlled by [data-theme="dark"|"light"] on <html> or any wrapper.
+   ----------------------------------------------------------------------------
+   Brand palette (fixed, from SPEC):
+     Indigo  #5156be — primary identity: links, key sections, active nav,
+                       and the human-in-the-loop "spark"
+     Green   #2ab57d — action: submit buttons, important actions, the twin's ring
+     Sky     #4ba6ef — info: accent lines, highlights, the visitor
+     Slate   #343a40 — main headings (light mode)
+     Gray    #74788d — supporting text, labels
+     Amber   #ffbf53 — warning / needs-attention (badges only, never large areas)
+     Red     #fd625e — danger (badges only)
+   Rules: no gradients in UI chrome, no accent-bar cliché down the left of
+   panels, no emoji. Indigo-led; green strictly for actions; amber status-only.
+   ========================================================================== */
+
+:root {
+  /* ---- Brand constants (hue anchors — do not theme these) ---- */
+  --brand-indigo: #5156be;
+  --brand-green:  #2ab57d;
+  --brand-sky:    #4ba6ef;
+  --brand-slate:  #343a40;
+  --brand-gray:   #74788d;
+  --brand-warn:   #ffbf53;
+  --brand-danger: #fd625e;
+
+  /* ---- Typography families ---- */
+  --font-display: "Newsreader", Georgia, "Times New Roman", serif;
+  --font-sans: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* ---- Type scale (root 16px) ---- */
+  --text-2xs: 0.6875rem; /* 11 — mono micro labels */
+  --text-xs:  0.75rem;   /* 12 */
+  --text-sm:  0.8125rem; /* 13 */
+  --text-base:0.9375rem; /* 15 — UI body default */
+  --text-md:  1.0625rem; /* 17 — message body */
+  --text-lg:  1.375rem;  /* 22 */
+  --text-xl:  1.875rem;  /* 30 */
+  --text-2xl: 2.5rem;    /* 40 */
+  --text-3xl: 3.5rem;    /* 56 */
+  --text-4xl: 4.75rem;   /* 76 — display */
+
+  --leading-tight: 1.08;
+  --leading-snug: 1.28;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.62;
+
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.04em;
+  --tracking-caps: 0.14em;  /* mono eyebrow labels */
+
+  /* ---- Spacing (4px base) ---- */
+  --space-0: 0;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+  --space-9: 48px;
+  --space-10: 64px;
+  --space-11: 80px;
+  --space-12: 112px;
+
+  /* ---- Radius (sharp, modern — crisp but not hard) ---- */
+  --radius-xs: 3px;
+  --radius-sm: 5px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 999px;
+
+  /* ---- Motion ---- */
+  --ease-out: cubic-bezier(0.22, 0.78, 0.24, 1);
+  --ease-in-out: cubic-bezier(0.6, 0, 0.2, 1);
+  --dur-fast: 120ms;
+  --dur: 200ms;
+  --dur-slow: 360ms;
+
+  /* ---- Layout ---- */
+  --container-chat: 760px;     /* visitor conversation column */
+  --sidebar-w: 340px;          /* admin inbox sidebar */
+  --header-h: 64px;
+}
+
+/* ============================================================================
+   DARK THEME — the hero. Deep slate-navy neutrals (SPEC: #1c2130 / #242b3d).
+   ========================================================================== */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Surfaces (slate-navy ramp) */
+  --surface-0: #1c2130;   /* app canvas (SPEC dark background) */
+  --surface-1: #242b3d;   /* panels, cards, sidebar (SPEC dark card) */
+  --surface-2: #2c3449;   /* raised: inputs, hover, message bubbles */
+  --surface-3: #37415c;   /* highest: menus, active row, popovers */
+  --surface-sunken: #161a29; /* wells, code, conversation backdrop */
+
+  /* Borders & hairlines */
+  --border: #333d55;
+  --border-strong: #455373;
+  --hairline: rgba(255,255,255,0.06);
+
+  /* Text (SPEC dark headings ≈ #ced4da, cool) */
+  --text: #dfe4ee;        /* primary */
+  --text-muted: #a6adc0;  /* secondary */
+  --text-faint: #74788d;  /* tertiary / labels (spec gray) */
+  --text-on-accent: #ffffff;
+  --text-on-warn: #221703;
+
+  /* Indigo — primary identity & the human spark */
+  --indigo: #7075d8;
+  --indigo-strong: #5156be;
+  --indigo-ink: #c0c3f0;      /* indigo text on dark */
+  --indigo-soft: rgba(112, 117, 216, 0.16);
+  --indigo-line: rgba(112, 117, 216, 0.45);
+
+  /* Green — actions & the twin */
+  --green: #33c78b;
+  --green-strong: #2ab57d;
+  --green-hover: #3ecf96;
+  --green-ink: #8fe6c0;
+  --green-soft: rgba(42, 181, 125, 0.15);
+  --green-line: rgba(42, 181, 125, 0.45);
+
+  /* Sky — info accents & the visitor */
+  --sky: #63b4f2;
+  --sky-strong: #4ba6ef;
+  --sky-ink: #bcdefb;
+  --sky-soft: rgba(75, 166, 239, 0.14);
+  --sky-line: rgba(75, 166, 239, 0.40);
+
+  /* Amber — warning / needs-attention (badges only) */
+  --warn: #ffbf53;
+  --warn-strong: #f5ab2e;
+  --warn-ink: #ffd88f;
+  --warn-soft: rgba(255, 191, 83, 0.13);
+  --warn-line: rgba(255, 191, 83, 0.45);
+
+  /* Semantic */
+  --focus-ring: rgba(112, 117, 216, 0.55);  /* indigo spark focus */
+  --danger: #fd625e;
+  --positive: #2ab57d;     /* read / synced / done */
+
+  /* Role identity (visitor / avatar / human) */
+  --role-visitor: var(--sky);
+  --role-avatar: var(--green);   /* twin = green, ties to the asset's ring */
+  --role-human: var(--indigo);   /* the human spark */
+
+  /* Elevation */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
+  --shadow-md: 0 8px 24px -8px rgba(0,0,0,0.55), 0 2px 6px rgba(0,0,0,0.35);
+  --shadow-lg: 0 24px 60px -16px rgba(0,0,0,0.65), 0 6px 16px rgba(0,0,0,0.4);
+  --glow-indigo: 0 0 0 1px var(--indigo-line), 0 8px 28px -10px rgba(112,117,216,0.35);
+  --glow-green: 0 0 0 1px var(--green-line), 0 8px 30px -10px rgba(42,181,125,0.30);
+
+  /* Decorative grid (HUD texture) */
+  --grid-line: rgba(140, 152, 220, 0.05);
+}
+
+/* ============================================================================
+   LIGHT THEME — fully designed. Cool off-white (SPEC: #f5f6f8 / #ffffff).
+   ========================================================================== */
+[data-theme="light"] {
+  color-scheme: light;
+
+  --surface-0: #f5f6f8;   /* SPEC light canvas */
+  --surface-1: #ffffff;   /* SPEC light card */
+  --surface-2: #eff1f5;
+  --surface-3: #e4e7ee;
+  --surface-sunken: #eceef3;
+
+  --border: #dfe3ec;
+  --border-strong: #c3cad9;
+  --hairline: rgba(28, 33, 48, 0.08);
+
+  --text: #343a40;        /* SPEC slate heading */
+  --text-muted: #5a6072;
+  --text-faint: #74788d;  /* spec gray */
+  --text-on-accent: #ffffff;
+  --text-on-warn: #221703;
+
+  --indigo: #5156be;
+  --indigo-strong: #4348ad;
+  --indigo-ink: #3a3f9e;
+  --indigo-soft: rgba(81, 86, 190, 0.10);
+  --indigo-line: rgba(81, 86, 190, 0.35);
+
+  --green: #2ab57d;
+  --green-strong: #2ab57d;
+  --green-hover: #24a06f;
+  --green-ink: #177a52;
+  --green-soft: rgba(42, 181, 125, 0.12);
+  --green-line: rgba(42, 181, 125, 0.40);
+
+  --sky: #4ba6ef;
+  --sky-strong: #2489d8;
+  --sky-ink: #1668a8;
+  --sky-soft: rgba(75, 166, 239, 0.12);
+  --sky-line: rgba(75, 166, 239, 0.35);
+
+  --warn: #ffbf53;
+  --warn-strong: #e79a1b;
+  --warn-ink: #8a5c07;
+  --warn-soft: rgba(255, 191, 83, 0.20);
+  --warn-line: rgba(231, 154, 27, 0.50);
+
+  --focus-ring: rgba(81, 86, 190, 0.40);
+  --danger: #e0524e;
+  --positive: #1f9a69;
+
+  --role-visitor: var(--sky-strong);
+  --role-avatar: var(--green-ink);
+  --role-human: var(--indigo);
+
+  --shadow-sm: 0 1px 2px rgba(28, 33, 48, 0.06);
+  --shadow-md: 0 10px 28px -12px rgba(28, 33, 48, 0.18), 0 2px 6px rgba(28,33,48,0.06);
+  --shadow-lg: 0 28px 64px -20px rgba(28, 33, 48, 0.26), 0 6px 16px rgba(28,33,48,0.08);
+  --glow-indigo: 0 0 0 1px var(--indigo-line), 0 10px 30px -12px rgba(81,86,190,0.30);
+  --glow-green: 0 0 0 1px var(--green-line), 0 10px 30px -12px rgba(42,181,125,0.28);
+
+  --grid-line: rgba(28, 33, 48, 0.035);
+}
+
+/* ============================================================================
+   FRONTEND ADDITION — background texture mark (see design-system/docs/
+   background-texture.md). A white SVG used as an alpha mask, tiled by
+   .hud-grid::before; the visible colour comes from --grid-line above.
+   Swap the SVG to change the texture (rings / crosses / dots).
+   ========================================================================== */
+:root {
+  --grid-mark: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='44'%20height='44'%3E%3Ccircle%20cx='22'%20cy='22'%20r='3'%20fill='none'%20stroke='%23fff'%20stroke-width='1'/%3E%3C/svg%3E");
+}

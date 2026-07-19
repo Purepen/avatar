@@ -1,0 +1,33 @@
+# Fly.io config for the Avatar app. Deploy with scripts/deploy.sh.
+# Keep the app name in sync with APP= in deploy.sh.
+app = "purepen"
+primary_region = "lhr"               # closest Fly region to the Supabase eu-west-1 (Ireland) DB
+
+[env]
+  PORT = "8000"                      # matches the Dockerfile's uvicorn --port
+  COOKIE_SECURE = "1"                # production is HTTPS -> admin session cookie must be Secure
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_start_machines = true         # wake the machine when a request arrives
+  auto_stop_machines = "stop"        # stop the machine when idle...
+  min_machines_running = 0           # ...ALL the way to zero (budget mode: you
+                                     # only pay while someone is using the app;
+                                     # first visitor after idle waits ~5s)
+
+  [http_service.concurrency]
+    type = "connections"             # SSE holds one connection for the whole streamed reply
+    soft_limit = 90                  # (only relevant with >1 machine) start another past this
+    hard_limit = 150                 # one machine accepts up to this many — set above your peak
+
+  [[http_service.checks]]
+    method = "GET"
+    path = "/api/config"             # returns 200 with no DB hit — a clean health check
+    interval = "15s"
+    timeout = "3s"
+    grace_period = "10s"
+
+[[vm]]
+  size = "shared-cpu-1x"             # cheapest CPU preset — fine for a personal
+  memory = "1gb"                     # site; RAM only bills while running

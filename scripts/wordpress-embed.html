@@ -1,0 +1,35 @@
+<!-- Avatar embed for a WordPress "Custom HTML" block (or any host page).
+     Pins the app full-bleed just below the site nav, overrides the theme's
+     content-column max-width, guards horizontal overflow, and forwards ?q=N
+     from the host page into the iframe.
+     CHANGE TWO VALUES: the BASE constant (your app's subdomain) and the
+     iframe title (your own name). -->
+<style>
+  .avatar-embed-wrap {
+    position: relative;
+    width: 100vw;
+    left: 50%;
+    margin-left: -50vw;   /* full-bleed out of the theme's content column */
+    overflow-x: hidden;
+  }
+  .avatar-embed-wrap iframe {
+    display: block;
+    width: 100%;
+    height: calc(100vh - 120px);  /* adjust 120px to your site nav's height */
+    min-height: 560px;
+    border: 0;
+  }
+</style>
+<div class="avatar-embed-wrap">
+  <iframe id="avatar-embed"
+          title="Chat with Ed's digital twin"
+          allow="clipboard-write"></iframe>
+</div>
+<script>
+  (function () {
+    var BASE = "https://avatar.example.com";  /* <-- your app's subdomain */
+    var q = new URLSearchParams(window.location.search).get("q");
+    document.getElementById("avatar-embed").src =
+      BASE + "/" + (q && /^\d{1,2}$/.test(q) ? "?q=" + q : "");
+  })();
+</script>
