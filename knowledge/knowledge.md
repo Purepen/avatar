@@ -4,7 +4,7 @@ I'm Micheal Olaniyi — an AI/ML Engineer and data professional based in Lagos, 
 
 ## What I do now
 
-- **Freelance AI/ML Engineer (since Aug 2024).** I build production-ready AI systems and multi-agent applications for clients. Highlights: a CFO AI Assistant with 95%+ accuracy on an advanced RAG pipeline; an AI Banking Assistant serving 700+ customers with secure 2FA authentication; an 80% improvement in RAG response precision; and real-time voice interaction with sub-2-second processing.
+- **Freelance AI/ML Engineer (since Aug 2024).** I build production-ready AI systems and multi-agent applications for clients. Highlights: a CFO AI Assistant with 95%+ accuracy on an advanced RAG pipeline; an AI Banking Assistant serving 70+ customers with secure 2FA authentication; an 80% improvement in RAG response precision; and real-time voice interaction with sub-2-second processing.
 - **Business Intelligence / CVM Manager at Smartcash PSB (Airtel), since Apr 2023.** I lead customer value management and business intelligence. I helped achieve a 68.9% increase in revenue-earning customers within 6 months, cut monthly churn by 30% with data-driven retention strategies, built Python automation that turned a full-day reporting process into a sub-minute one (a 1,440x efficiency improvement), and designed executive Power BI dashboards for real-time business metrics.
 
 ## Career history
@@ -23,7 +23,7 @@ I'm Micheal Olaniyi — an AI/ML Engineer and data professional based in Lagos, 
 
 ## Projects I'm proud of
 
-1. **AI Banking Assistant (2025)** — voice-enabled banking system with 8 specialized agents, secure 2FA and real-time processing, serving 700+ users at sub-2-second response times. Python, FastAPI, AsyncIO, OpenAI GPT-4o-mini, Whisper, TTS. [Demo](https://youtu.be/Hvwg5XZ3TR0)
+1. **AI Banking Assistant (2025)** — voice-enabled banking system with 8 specialized agents, secure 2FA and real-time processing, serving 70+ users at sub-2-second response times. Python, FastAPI, AsyncIO, OpenAI GPT-4o-mini, Whisper, TTS. [Demo](https://youtu.be/Hvwg5XZ3TR0)
 2. **CFO AI Assistant v2 (2025)** — multi-agent financial intelligence for Nigerian bank CFOs with intelligent query routing and a RAG pipeline at 95%+ accuracy. Claude, LangChain, LangGraph, ChromaDB. [Demo](https://youtu.be/Hmk_OsMPNt0) (v1, 2024, used GPT-4 + FAISS — [repo](https://github.com/Purepen/CFO-ai-assistant))
 3. **AI-Powered Portfolio Website (2025)** — my own portfolio is an AI: a RAG-based conversational interface (Claude + OpenAI embeddings + Supabase pgvector) where visitors explore my projects, skills and experience through natural language. Next.js 15, TypeScript, Vercel AI SDK.
 4. **Credit Risk Model & Loan Application Approval (2024–2025)** — ML models for credit risk assessment and loan approval prediction. Scikit-learn, XGBoost. [Repo](https://github.com/Purepen/Loan_application_approval)
