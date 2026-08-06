@@ -146,6 +146,9 @@
   /* Semantic */
   --focus-ring: rgba(112, 117, 216, 0.55);  /* indigo spark focus */
   --danger: #fd625e;
+  --danger-ink: #ffb4b1;
+  --danger-soft: rgba(253, 98, 94, 0.13);
+  --danger-line: rgba(253, 98, 94, 0.45);
   --positive: #2ab57d;     /* read / synced / done */
 
   /* Role identity (visitor / avatar / human) */
@@ -213,6 +216,9 @@
 
   --focus-ring: rgba(81, 86, 190, 0.40);
   --danger: #e0524e;
+  --danger-ink: #9c2b27;
+  --danger-soft: rgba(224, 82, 78, 0.20);
+  --danger-line: rgba(200, 62, 58, 0.50);
   --positive: #1f9a69;
 
   --role-visitor: var(--sky-strong);

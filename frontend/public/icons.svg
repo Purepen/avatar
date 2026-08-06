@@ -66,4 +66,8 @@
 <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.8 12S6 5.8 12 5.8 21.2 12 21.2 12 18 18.2 12 18.2 2.8 12 2.8 12z"></path><circle cx="12" cy="12" r="2.6"></circle></symbol>
 
 <symbol id="i-live" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.2" class="fill"></circle><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 16.2a6 6 0 0 0 0-8.4"></path><path d="M5 5a9.5 9.5 0 0 0 0 14M19 19a9.5 9.5 0 0 0 0-14"></path></symbol>
+
+<symbol id="i-mute" viewBox="0 0 24 24"><path d="M4 6.5h13a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2.5L11 19v-3.5H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2z"></path><path d="M3.5 3.5l17 17"></path></symbol>
+
+<symbol id="i-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle><path d="M6.3 6.3l11.4 11.4"></path></symbol>
 </svg>

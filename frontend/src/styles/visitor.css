@@ -33,6 +33,14 @@ body { display: flex; flex-direction: column; overflow: hidden; }
   letter-spacing: var(--tracking-wide); text-transform: uppercase; margin-top: 3px; white-space: nowrap; }
 .switch-label { white-space: nowrap; }
 .topbar-right { display: flex; align-items: center; gap: var(--space-3); }
+
+/* Sets expectations up front: replies aren't instant once the human is
+   involved. Sits between the brand and the visitor's own controls. */
+.reply-notice { display: flex; align-items: center; justify-content: center; gap: 6px;
+  flex: 1; min-width: 0; padding: 0 var(--space-4);
+  font-size: var(--text-xs); color: var(--text-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.reply-notice .icon { width: 13px; height: 13px; flex: none; color: var(--sky); }
 .icon-btn { width: 38px; height: 38px; border-radius: var(--radius-md); border: 1px solid var(--border);
   background: var(--surface-1); color: var(--text-muted); display: inline-flex; align-items: center;
   justify-content: center; cursor: pointer; transition: all var(--dur) var(--ease-out); }
@@ -108,6 +116,8 @@ body { display: flex; flex-direction: column; overflow: hidden; }
   .topbar { flex-wrap: wrap; height: auto; min-height: var(--header-h);
     padding: var(--space-2) var(--space-4); row-gap: var(--space-2); }
   .topbar-right { flex-wrap: wrap; row-gap: var(--space-2); }
+  .reply-notice { order: 3; flex-basis: 100%; white-space: normal; text-align: center;
+    padding: 2px 0 0; }
   .name-field { max-width: 150px; }
   .name-field input { width: 100%; min-width: 0; }
   .divider-v { display: none; }

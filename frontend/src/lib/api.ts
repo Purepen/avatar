@@ -16,6 +16,8 @@ export interface Conversation {
   conversation_id: string;
   conversation_name: string | null;
   messages: Message[];
+  avatar_muted: boolean;
+  visitor_blocked: boolean;
 }
 
 export interface InboxEntry {
@@ -28,6 +30,13 @@ export interface InboxEntry {
   unread_count: number;
   needs_attention: boolean;
   search_blob: string;
+  avatar_muted: boolean;
+  visitor_blocked: boolean;
+}
+
+export interface ConversationState {
+  avatar_muted: boolean;
+  visitor_blocked: boolean;
 }
 
 async function json<T>(response: Response): Promise<T> {
@@ -76,6 +85,16 @@ export const adminPostMessage = (conversationId: string, content: string) =>
 
 export const adminResolve = (conversationId: string) =>
   fetch(`/admin/conversations/${conversationId}/resolve`, { method: "POST" });
+
+export const adminToggleMute = (conversationId: string) =>
+  fetch(`/admin/conversations/${conversationId}/mute`, { method: "POST" }).then((r) =>
+    json<ConversationState>(r),
+  );
+
+export const adminToggleBlock = (conversationId: string) =>
+  fetch(`/admin/conversations/${conversationId}/block`, { method: "POST" }).then((r) =>
+    json<ConversationState>(r),
+  );
 
 export const adminChangePassword = (currentPassword: string, newPassword: string) =>
   fetch("/admin/change-password", {

@@ -1,5 +1,6 @@
 """Tests for the composer attention toggle and full-thread admin search."""
 
+import asyncio
 import json
 
 import pytest
@@ -52,11 +53,77 @@ class TestAttentionToggle:
 
     async def test_no_attention_no_flag(self, client, conversation_id):
         await collect_sse(
-            client, {"conversation_id": conversation_id, "message": "Q1"}
+            client,
+            {"conversation_id": conversation_id, "message": "Q1", "visitor_name": "N.A."},
         )
         rows = db.fetch_conversation(conversation_id)
         assert rows[0]["needs_attention"] is False
         assert rows[0]["tool_calls"] is None
+
+
+class TestNewConversationAlert:
+    """First message of a brand-new conversation pushes an alert so the human
+    knows to come watch/intercept; later messages in the same conversation
+    don't repeat it (SPEC addition, 2026-08-02)."""
+
+    async def test_first_message_pushes_new_conversation_alert(
+        self, client, conversation_id, monkeypatch
+    ):
+        import app.routers.chat as chat_module
+
+        calls: list[str] = []
+        monkeypatch.setattr(
+            chat_module, "push", lambda message, timeout=15: calls.append(message)
+        )
+
+        await collect_sse(
+            client,
+            {"conversation_id": conversation_id, "message": "Q1", "visitor_name": "N.C."},
+        )
+        # The push is fire-and-forget (must never delay the visitor's reply);
+        # give the background task a moment to run before asserting on it.
+        await asyncio.sleep(0.2)
+        assert len(calls) == 1
+        assert calls[0].startswith("[New conversation]")
+        assert "N.C." in calls[0]
+
+    async def test_second_message_does_not_repeat_alert(
+        self, client, conversation_id, monkeypatch
+    ):
+        import app.routers.chat as chat_module
+
+        calls: list[str] = []
+        monkeypatch.setattr(
+            chat_module, "push", lambda message, timeout=15: calls.append(message)
+        )
+
+        await collect_sse(
+            client,
+            {"conversation_id": conversation_id, "message": "Q1", "visitor_name": "S.M."},
+        )
+        await collect_sse(
+            client,
+            {"conversation_id": conversation_id, "message": "Q2", "visitor_name": "S.M."},
+        )
+        await asyncio.sleep(0.2)
+        new_convo_calls = [c for c in calls if c.startswith("[New conversation]")]
+        assert len(new_convo_calls) == 1
+
+    async def test_alert_failure_does_not_break_the_chat(
+        self, client, conversation_id, monkeypatch
+    ):
+        import app.routers.chat as chat_module
+
+        def boom(message: str, timeout: int = 15) -> str:
+            raise RuntimeError("pushover down")
+
+        monkeypatch.setattr(chat_module, "push", boom)
+
+        events = await collect_sse(
+            client,
+            {"conversation_id": conversation_id, "message": "Q1", "visitor_name": "A.F."},
+        )
+        assert [e for e, _ in events][-1] == "done"
 
 
 class TestInboxSearchBlob:

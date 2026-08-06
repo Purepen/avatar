@@ -20,6 +20,8 @@ ADMIN_ROUTES = [
     ("GET", "/admin/conversations/00000000-0000-0000-0000-000000000001"),
     ("POST", "/admin/conversations/00000000-0000-0000-0000-000000000001/messages"),
     ("POST", "/admin/conversations/00000000-0000-0000-0000-000000000001/resolve"),
+    ("POST", "/admin/conversations/00000000-0000-0000-0000-000000000001/mute"),
+    ("POST", "/admin/conversations/00000000-0000-0000-0000-000000000001/block"),
 ]
 
 
@@ -101,7 +103,8 @@ class TestInstantAnswer:
 
     async def test_out_of_range_qn_still_no_llm(self, client, conversation_id):
         events = await collect_sse(
-            client, {"conversation_id": conversation_id, "message": "Q99"}
+            client,
+            {"conversation_id": conversation_id, "message": "Q99", "visitor_name": "R.Q."},
         )
         meta = json.loads(dict(events)["meta"])
         assert meta["mode"] == "instant"
@@ -128,7 +131,12 @@ class TestAbuseGuards:
 
         long_msg = "a" * 25_000
         events = await collect_sse(
-            client, {"conversation_id": conversation_id, "message": long_msg + " Q2"}
+            client,
+            {
+                "conversation_id": conversation_id,
+                "message": long_msg + " Q2",
+                "visitor_name": "L.M.",
+            },
         )
         # Not a Qn (long text), so agent mode — but we only check the stored visitor row
         stored = db.fetch_conversation(conversation_id)[0]
@@ -140,6 +148,153 @@ class TestAbuseGuards:
         # the SSE visitor_message echoes the clamped text
         visitor_evt = json.loads(dict(events)["visitor_message"])
         assert visitor_evt["content"].endswith(config.TRUNCATION_NOTE)
+
+
+class TestMandatoryName:
+    async def test_message_without_name_rejected(self, client, conversation_id):
+        r = await client.post(
+            "/api/chat",
+            json={"conversation_id": conversation_id, "message": "hello there"},
+        )
+        assert r.status_code == 400
+        assert r.json() == {"error": "name_required"}
+        assert db.fetch_conversation(conversation_id) == []
+
+    async def test_blank_name_rejected(self, client, conversation_id):
+        r = await client.post(
+            "/api/chat",
+            json={
+                "conversation_id": conversation_id,
+                "message": "hello there",
+                "visitor_name": "   ",
+            },
+        )
+        assert r.status_code == 400
+        assert db.fetch_conversation(conversation_id) == []
+
+    async def test_named_message_accepted(self, client, conversation_id):
+        events = await collect_sse(
+            client,
+            {
+                "conversation_id": conversation_id,
+                "message": "Q1",
+                "visitor_name": "N.C.",
+            },
+        )
+        assert [e for e, _ in events][-1] == "done"
+        assert db.fetch_conversation(conversation_id)[0]["conversation_name"] == "N.C."
+
+    async def test_auto_deep_link_qn_exempt_from_name(self, client, conversation_id):
+        """The ?q=N auto-submit fires before the visitor could have typed a
+        name — it's the one exemption to the mandatory-name rule."""
+        events = await collect_sse(
+            client,
+            {
+                "conversation_id": conversation_id,
+                "message": "Q1",
+                "auto_deep_link": True,
+            },
+        )
+        assert [e for e, _ in events][-1] == "done"
+        rows = db.fetch_conversation(conversation_id)
+        assert [r["role"] for r in rows] == ["visitor", "avatar"]
+
+    async def test_auto_deep_link_does_not_exempt_non_qn_messages(
+        self, client, conversation_id
+    ):
+        """auto_deep_link can't be (ab)used to skip the name gate for a real,
+        free-form message — only for the instant Qn shortcut."""
+        r = await client.post(
+            "/api/chat",
+            json={
+                "conversation_id": conversation_id,
+                "message": "hello there",
+                "auto_deep_link": True,
+            },
+        )
+        assert r.status_code == 400
+        assert db.fetch_conversation(conversation_id) == []
+
+
+class TestConversationControls:
+    async def test_block_toggle_flips_and_persists(self, admin_client, conversation_id):
+        r = await admin_client.post(f"/admin/conversations/{conversation_id}/block")
+        assert r.status_code == 200
+        assert r.json() == {"avatar_muted": False, "visitor_blocked": True}
+
+        r = await admin_client.post(f"/admin/conversations/{conversation_id}/block")
+        assert r.json()["visitor_blocked"] is False
+
+    async def test_mute_toggle_flips_and_persists(self, admin_client, conversation_id):
+        r = await admin_client.post(f"/admin/conversations/{conversation_id}/mute")
+        assert r.status_code == 200
+        assert r.json() == {"avatar_muted": True, "visitor_blocked": False}
+
+        r = await admin_client.post(f"/admin/conversations/{conversation_id}/mute")
+        assert r.json()["avatar_muted"] is False
+
+    async def test_blocked_visitor_cannot_chat(self, client, admin_client, conversation_id):
+        await admin_client.post(f"/admin/conversations/{conversation_id}/block")
+        r = await client.post(
+            "/api/chat",
+            json={
+                "conversation_id": conversation_id,
+                "message": "let me in",
+                "visitor_name": "B.V.",
+            },
+        )
+        assert r.status_code == 403
+        assert r.json() == {"error": "blocked"}
+        assert db.fetch_conversation(conversation_id) == []
+
+        # Unblocking restores normal service.
+        await admin_client.post(f"/admin/conversations/{conversation_id}/block")
+        events = await collect_sse(
+            client,
+            {
+                "conversation_id": conversation_id,
+                "message": "Q1",
+                "visitor_name": "B.V.",
+            },
+        )
+        assert [e for e, _ in events][-1] == "done"
+
+    async def test_muted_avatar_stays_silent(self, client, admin_client, conversation_id):
+        await admin_client.post(f"/admin/conversations/{conversation_id}/mute")
+        events = await collect_sse(
+            client,
+            {
+                "conversation_id": conversation_id,
+                "message": "Q1",  # would normally be an instant no-LLM answer
+                "visitor_name": "M.V.",
+            },
+        )
+        names = [e for e, _ in events]
+        assert names == ["visitor_message", "meta", "done"]
+        assert json.loads(dict(events)["meta"]) == {"mode": "muted"}
+        done = json.loads(dict(events)["done"])
+        assert done == {"id": None, "created_at": None, "needs_attention": False}
+        # only the visitor's row was stored — no avatar reply
+        rows = db.fetch_conversation(conversation_id)
+        assert [r["role"] for r in rows] == ["visitor"]
+
+    async def test_open_thread_reports_conversation_state(
+        self, admin_client, conversation_id
+    ):
+        db.insert_message(conversation_id, "visitor", "hi", "O.T.")
+        await admin_client.post(f"/admin/conversations/{conversation_id}/mute")
+        r = await admin_client.get(f"/admin/conversations/{conversation_id}")
+        assert r.status_code == 200
+        assert r.json()["avatar_muted"] is True
+        assert r.json()["visitor_blocked"] is False
+
+    async def test_inbox_reports_conversation_state(self, admin_client, conversation_id):
+        db.insert_message(conversation_id, "visitor", "hi", "I.S.")
+        await admin_client.post(f"/admin/conversations/{conversation_id}/block")
+        r = await admin_client.get("/admin/conversations")
+        entry = next(e for e in r.json() if e["conversation_id"] == conversation_id)
+        assert entry["visitor_blocked"] is True
+        assert entry["avatar_muted"] is False
 
 
 class TestAdminFlows:
@@ -247,3 +402,31 @@ class TestWithRealModel:
             json.loads(d)["text"] for e, d in events if e == "token"
         )
         assert "TWIN50" in full_text
+
+    async def test_pricing_request_escalates_instead_of_quoting(
+        self, client, conversation_id
+    ):
+        """Guardrail (2026-08-02): the twin must never negotiate price itself —
+        it should hand off to the human via push_tool instead of quoting numbers."""
+        import re
+
+        events = await collect_sse(
+            client,
+            {
+                "conversation_id": conversation_id,
+                "message": (
+                    "How much would you charge to build me a voice agent with RAG "
+                    "and authentication, deployed on Twilio, roughly 300 calls a day?"
+                ),
+                "visitor_name": "P.Q.",
+            },
+        )
+        full_text = "".join(
+            json.loads(d)["text"] for e, d in events if e == "token"
+        )
+        tool_calls = [
+            json.loads(d)["tool"] for e, d in events if e == "tool_call"
+        ]
+        assert "push_tool" in tool_calls
+        # No dollar/naira figures — the twin must not produce a quote itself.
+        assert not re.search(r"[$₦]\s?\d|\d[,.]?\d{3}\s?(NGN|USD|dollars)", full_text)

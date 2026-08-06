@@ -10,12 +10,15 @@ export interface SseEvent {
 }
 
 export class RateLimitError extends Error {}
+export class NameRequiredError extends Error {}
+export class BlockedError extends Error {}
 
 export async function* streamChat(payload: {
   conversation_id: string;
   message: string;
   visitor_name?: string;
   attention?: boolean;
+  auto_deep_link?: boolean;
 }): AsyncGenerator<SseEvent> {
   const response = await fetch("/api/chat", {
     method: "POST",
@@ -23,6 +26,8 @@ export async function* streamChat(payload: {
     body: JSON.stringify(payload),
   });
   if (response.status === 429) throw new RateLimitError();
+  if (response.status === 400) throw new NameRequiredError();
+  if (response.status === 403) throw new BlockedError();
   if (!response.ok || !response.body) {
     throw new Error(`chat request failed: ${response.status}`);
   }

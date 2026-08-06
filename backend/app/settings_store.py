@@ -58,3 +58,43 @@ def delete_setting(key: str) -> None:
     except APIError:
         pass
     _cache[key] = (time.time(), None)
+
+
+# ---- Per-conversation admin controls (pause the Avatar / block the visitor) ----
+#
+# Stored in the same key-value settings table under "conv_state:<conversation_id>"
+# — no new table needed. Degrades to "both off" if the table is missing.
+
+_CONV_STATE_PREFIX = "conv_state:"
+
+
+def conversation_state(conversation_id: str) -> dict:
+    value = get_setting(_CONV_STATE_PREFIX + conversation_id)
+    return {
+        "avatar_muted": bool(value and value.get("avatar_muted")),
+        "visitor_blocked": bool(value and value.get("visitor_blocked")),
+    }
+
+
+def set_conversation_state(conversation_id: str, **updates: bool) -> dict:
+    state = conversation_state(conversation_id)
+    state.update(updates)
+    set_setting(_CONV_STATE_PREFIX + conversation_id, state)
+    return state
+
+
+def all_conversation_states() -> dict[str, dict]:
+    """Every conv_state row in one round-trip, keyed by conversation_id —
+    used by the admin inbox so it doesn't fetch state per-conversation."""
+    try:
+        rows = (
+            get_client()
+            .table("settings")
+            .select("key, value")
+            .like("key", f"{_CONV_STATE_PREFIX}%")
+            .execute()
+            .data
+        )
+    except APIError:
+        return {}
+    return {row["key"][len(_CONV_STATE_PREFIX) :]: row["value"] for row in rows}

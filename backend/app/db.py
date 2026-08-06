@@ -95,6 +95,9 @@ def fetch_admin_inbox(limit_rows: int = 2000) -> list[dict]:
     personal-site scale (a Postgres view could replace this later without
     changing the API shape).
     """
+    from . import settings_store  # deferred: settings_store imports get_client from here
+
+    states = settings_store.all_conversation_states()
     rows = (
         get_client()
         .table("messages")
@@ -112,6 +115,7 @@ def fetch_admin_inbox(limit_rows: int = 2000) -> list[dict]:
         cid = row["conversation_id"]
         convo = conversations.get(cid)
         if convo is None:
+            state = states.get(cid, {})
             convo = conversations[cid] = {
                 "conversation_id": cid,
                 "conversation_name": None,
@@ -122,6 +126,8 @@ def fetch_admin_inbox(limit_rows: int = 2000) -> list[dict]:
                 "unread_count": 0,
                 "needs_attention": False,
                 "search_blob": "",
+                "avatar_muted": bool(state.get("avatar_muted")),
+                "visitor_blocked": bool(state.get("visitor_blocked")),
             }
         convo["message_count"] += 1
         # Lowercased full-thread text (capped) so admin search reaches every

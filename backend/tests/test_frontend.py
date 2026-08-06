@@ -56,6 +56,11 @@ def visitor(page):
     suppress_tour(page)
     page.goto(BASE + "/")
     page.wait_for_selector("#composerInput")
+    # Mandatory-name gate: pre-fill so send() works for tests that aren't
+    # specifically exercising the name gate itself; refocus the composer
+    # afterwards so the "autofocus on load" assertion still holds.
+    page.fill("#nameField", "T.T.")
+    page.focus("#composerInput")
     yield page
     track(page)
 
@@ -86,6 +91,30 @@ class TestVisitor:
         set_theme(page, "dark")
         page.set_viewport_size(MOBILE)
         page.screenshot(path=str(SHOTS / "visitor-first-dark-mobile.png"))
+
+    def test_name_required_blocks_send(self, page):
+        """No name/initials -> the message is not sent; the field shakes red
+        and an inline instruction appears instead of a visitor bubble."""
+        page.set_viewport_size(DESKTOP)
+        suppress_tour(page)
+        page.goto(BASE + "/")
+        page.wait_for_selector("#composerInput")
+        send(page, "Hello without a name")
+        page.wait_for_selector(".sys-note", timeout=10_000)
+        assert "name" in page.locator(".sys-note").inner_text().lower()
+        assert page.locator(".msg--visitor").count() == 0
+        assert "is-error" in (page.get_attribute(".name-field", "class") or "")
+        page.screenshot(path=str(SHOTS / "visitor-name-required.png"))
+        # filling the name and resending now works
+        page.fill("#nameField", "Q.G.")
+        send(page, "Q1")
+        page.wait_for_selector(".msg--visitor", timeout=15_000)
+        track(page)
+
+    def test_reply_notice_visible(self, visitor):
+        page = visitor
+        assert page.is_visible("#replyNotice")
+        assert len(page.locator("#replyNoticeText").inner_text()) > 0
 
     def test_q2_instant_answer(self, visitor):
         page = visitor
@@ -119,6 +148,10 @@ class TestVisitor:
         page = visitor
         send(page, "Q1")
         page.wait_for_selector(".msg--avatar", timeout=30_000)
+        # Wait for the send to fully finish (not just the bubble to appear)
+        # before reloading, so the reply is actually persisted server-side —
+        # reloading mid-stream races the in-flight write, same as a real user.
+        page.wait_for_selector("#sendBtn:not([disabled])", timeout=30_000)
         track(page)
         page.reload()
         page.wait_for_selector(".msg--avatar", timeout=30_000)
@@ -154,7 +187,13 @@ class TestVisitor:
             "document.cookie.split('; ').find(r => r.startsWith('avatar_cid='))?.split('=')[1]"
         )
         db.insert_message(cid, "human", "It's the real me — hello!", read=True)
-        page.wait_for_selector(".msg--human", timeout=20_000)
+        # 10s poll interval + real setup/network overhead under a full test
+        # run needs more headroom than a bare 20s budget reliably gives —
+        # generous on purpose, since every visitor test in this run fires a
+        # real background Pushover call (new-conversation alert) that can
+        # briefly contend for the same thread pool. Not a production
+        # scenario: a single browser's 10s poll isn't racing anything there.
+        page.wait_for_selector(".msg--human", timeout=45_000)
         assert "the human · live" in page.locator(".human-tag").inner_text().lower()
         page.screenshot(path=str(SHOTS / "visitor-human-moment.png"))
         set_theme(page, "light")
@@ -349,6 +388,40 @@ class TestAdmin:
         assert page.is_visible("#forgotBtn")
         # (not clicking through — a real click sends a live Pushover code and
         # consumes the 3/hour budget; the API flow is covered in test_password)
+
+    def test_mute_and_block_buttons_toggle(self, page):
+        cid = str(uuid.uuid4())
+        _created.add(cid)
+        db.insert_message(cid, "visitor", "toggle button test", "T.B.")
+
+        self.login(page)
+        page.locator(".convo-item", has_text="T.B.").first.click()
+        page.wait_for_selector(".msg--visitor", timeout=15_000)
+
+        assert "is-on" not in (page.get_attribute("#muteBtn", "class") or "")
+        page.click("#muteBtn")
+        page.wait_for_selector("#muteBtn.is-on", timeout=10_000)
+        assert page.is_visible("#mutedFlag")
+        # the toggle survives a re-render of the inbox row (mini-flag shown)
+        assert page.locator(".convo-item", has_text="T.B.").locator(".mini-flag--indigo").count() == 1
+        page.screenshot(path=str(SHOTS / "admin-muted-thread.png"))
+        page.click("#muteBtn")
+        page.wait_for_function(
+            "!document.getElementById('muteBtn').classList.contains('is-on')", timeout=10_000
+        )
+        assert page.is_hidden("#mutedFlag")
+
+        assert "is-on" not in (page.get_attribute("#blockBtn", "class") or "")
+        page.click("#blockBtn")
+        page.wait_for_selector("#blockBtn.is-on", timeout=10_000)
+        assert page.is_visible("#blockedFlag")
+        assert page.locator(".convo-item", has_text="T.B.").locator(".mini-flag--danger").count() == 1
+        page.screenshot(path=str(SHOTS / "admin-blocked-thread.png"))
+        page.click("#blockBtn")
+        page.wait_for_function(
+            "!document.getElementById('blockBtn').classList.contains('is-on')", timeout=10_000
+        )
+        assert page.is_hidden("#blockedFlag")
 
     def test_mobile_master_detail(self, page):
         cid = str(uuid.uuid4())

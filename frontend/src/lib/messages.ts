@@ -26,6 +26,25 @@ export function formatTime(iso: string | Date): string {
   return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 }
 
+/** "Aug 7, 5:23 PM" — used where a bare time is ambiguous (e.g. the inbox
+ *  row, which may show the last message from days ago). */
+export function formatDateTime(iso: string | Date): string {
+  const date = typeof iso === "string" ? new Date(iso) : iso;
+  const datePart = date.toLocaleDateString([], { month: "short", day: "numeric" });
+  return `${datePart}, ${formatTime(date)}`;
+}
+
+/** Calendar-day key for grouping messages under day separators. */
+export function dayKey(iso: string | Date): string {
+  const date = typeof iso === "string" ? new Date(iso) : iso;
+  return date.toDateString();
+}
+
+export function dayLabel(iso: string | Date): string {
+  const date = typeof iso === "string" ? new Date(iso) : iso;
+  return date.toLocaleDateString([], { month: "short", day: "numeric" });
+}
+
 export interface MessageOptions {
   role: Role;
   content: string;

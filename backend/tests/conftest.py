@@ -43,6 +43,7 @@ def conversation_id():
     cid = str(uuid.uuid4())
     yield cid
     db.get_client().table("messages").delete().eq("conversation_id", cid).execute()
+    db.get_client().table("settings").delete().eq("key", f"conv_state:{cid}").execute()
 
 
 async def collect_sse(client, payload) -> list[tuple[str, str]]:

@@ -10,6 +10,9 @@ class ChatRequest(BaseModel):
     # The composer's attention toggle: this message also pings the human
     # directly (push notification), independent of what the model decides.
     attention: bool = False
+    # Set only by the ?q=N auto-submit on page load — the one exemption from
+    # the mandatory-name rule, since the visitor hasn't typed anything yet.
+    auto_deep_link: bool = False
 
 
 class LoginRequest(BaseModel):
@@ -46,6 +49,8 @@ class ConversationResponse(BaseModel):
     conversation_id: str
     conversation_name: str | None = None
     messages: list[Message]
+    avatar_muted: bool = False
+    visitor_blocked: bool = False
 
 
 class InboxEntry(BaseModel):
@@ -58,6 +63,13 @@ class InboxEntry(BaseModel):
     unread_count: int
     needs_attention: bool
     search_blob: str = ""
+    avatar_muted: bool = False
+    visitor_blocked: bool = False
+
+
+class ConversationStateResponse(BaseModel):
+    avatar_muted: bool
+    visitor_blocked: bool
 
 
 class ConfigResponse(BaseModel):

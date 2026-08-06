@@ -119,6 +119,8 @@
         </div>
         <div class="thread-actions">
           <span class="attn-flag" id="attnFlag" hidden><svg class="icon"><use href="/icons.svg#i-spark"/></svg> Avatar asked for you</span>
+          <span class="attn-flag attn-flag--indigo" id="mutedFlag" hidden><svg class="icon"><use href="/icons.svg#i-mute"/></svg> Avatar paused — you're replying</span>
+          <span class="attn-flag attn-flag--danger" id="blockedFlag" hidden><svg class="icon"><use href="/icons.svg#i-ban"/></svg> Visitor blocked</span>
           <button class="btn btn--secondary btn--sm" id="resolveBtn"><svg class="icon icon--sm"><use href="/icons.svg#i-check"/></svg> Mark resolved</button>
         </div>
       </div>
@@ -140,6 +142,8 @@
           </div>
           <div class="composer" id="composer">
             <textarea id="composerInput" rows="1" placeholder="Write a message…"></textarea>
+            <button class="btn-toggle" id="muteBtn" title="Pause the Avatar — only you reply" aria-pressed="false"><svg class="icon"><use href="/icons.svg#i-mute"/></svg></button>
+            <button class="btn-toggle btn-toggle--danger" id="blockBtn" title="Block this visitor from messaging" aria-pressed="false"><svg class="icon"><use href="/icons.svg#i-ban"/></svg></button>
             <button class="btn-send" id="sendBtn" title="Send (Enter)"><svg class="icon"><use href="/icons.svg#i-send"/></svg></button>
           </div>
           <div class="kbd-hints">

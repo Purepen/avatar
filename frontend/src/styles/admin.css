@@ -96,6 +96,10 @@ body { overflow: hidden; }
   border-radius: var(--radius-pill); padding: 5px 11px; }
 .attn-flag[hidden] { display: none; }
 .attn-flag .icon { width: 14px; height: 14px; color: var(--warn); }
+.attn-flag--indigo { color: var(--indigo-ink); background: var(--indigo-soft); border-color: var(--indigo-line); }
+.attn-flag--indigo .icon { color: var(--indigo); }
+.attn-flag--danger { color: var(--danger-ink); background: var(--danger-soft); border-color: var(--danger-line); }
+.attn-flag--danger .icon { color: var(--danger); }
 .back-btn { display: none; }
 
 .thread { flex: 1; min-height: 0; overflow-y: auto; }

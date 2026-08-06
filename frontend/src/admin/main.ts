@@ -18,14 +18,20 @@ import {
   adminResetRequest,
   adminResolve,
   adminSession,
+  adminToggleBlock,
+  adminToggleMute,
   getConfig,
   getConversation,
+  type ConversationState,
   type InboxEntry,
   type Message,
 } from "../lib/api";
 import {
   createMessageEl,
   createToolStatusEl,
+  dayKey,
+  dayLabel,
+  formatDateTime,
   formatTime,
   initialsFor,
   markToolStatusDone,
@@ -51,12 +57,17 @@ const composerInput = document.getElementById("composerInput") as HTMLTextAreaEl
 const sendBtn = document.getElementById("sendBtn") as HTMLButtonElement;
 const resolveBtn = document.getElementById("resolveBtn") as HTMLButtonElement;
 const attnFlag = document.getElementById("attnFlag") as HTMLElement;
+const muteBtn = document.getElementById("muteBtn") as HTMLButtonElement;
+const blockBtn = document.getElementById("blockBtn") as HTMLButtonElement;
+const mutedFlag = document.getElementById("mutedFlag") as HTMLElement;
+const blockedFlag = document.getElementById("blockedFlag") as HTMLElement;
 const backBtn = document.getElementById("backBtn") as HTMLButtonElement;
 
 let inbox: InboxEntry[] = [];
 let activeId: string | null = null;
 let activeHadAttention = false;
 let lastThreadMessageId = 0;
+let lastThreadDay: string | null = null;
 let threadMessages: Message[] = [];
 let filter: "all" | "attention" | "unread" = "all";
 let threadTimer: number | undefined;
@@ -227,6 +238,8 @@ function wireDashboard(): void {
   composerInput.addEventListener("input", autoGrow);
   sendBtn.addEventListener("click", () => void sendMessage());
   resolveBtn.addEventListener("click", () => void resolveActive());
+  muteBtn.addEventListener("click", () => void toggleMute());
+  blockBtn.addEventListener("click", () => void toggleBlock());
   backBtn.addEventListener("click", () => workspace.classList.remove("show-thread"));
 
   // Arrow keys move between conversations (unless typing multi-line text).
@@ -291,15 +304,22 @@ function renderInbox(): void {
       : entry.unread_count > 0
         ? `<span class="badge badge--dot"></span>`
         : `<svg class="icon icon--sm" style="color:var(--positive)"><use href="/icons.svg#i-check2"/></svg>`;
+    const flags =
+      (entry.avatar_muted
+        ? `<span class="mini-flag mini-flag--indigo" title="Avatar paused"><svg class="icon"><use href="/icons.svg#i-mute"/></svg></span>`
+        : "") +
+      (entry.visitor_blocked
+        ? `<span class="mini-flag mini-flag--danger" title="Visitor blocked"><svg class="icon"><use href="/icons.svg#i-ban"/></svg></span>`
+        : "");
 
     item.innerHTML = `
       <span class="avatar-initials">${escapeHtml(initialsFor(name))}</span>
       <div class="convo-main">
-        <div class="convo-top"><span class="convo-name">${escapeHtml(name)}</span></div>
+        <div class="convo-top"><span class="convo-name">${escapeHtml(name)}</span>${flags}</div>
         <div class="convo-preview">${highlightText(stripMarkdown(entry.preview), searchInput.value.trim())}</div>
       </div>
       <div class="convo-side">
-        <span class="msg-time">${formatTime(entry.last_message_at)}</span>
+        <span class="msg-time">${formatDateTime(entry.last_message_at)}</span>
         ${side}
       </div>`;
     item.addEventListener("click", () => void openThread(entry.conversation_id));
@@ -340,6 +360,10 @@ async function openThread(conversationId: string): Promise<void> {
   (document.getElementById("threadSub") as HTMLElement).textContent =
     `conv_${conversationId.slice(0, 6)} · started ${first ? formatTime(first.created_at) : "–"} · ${thread.messages.length} messages`;
   attnFlag.hidden = !activeHadAttention;
+  applyConversationState({
+    avatar_muted: thread.avatar_muted,
+    visitor_blocked: thread.visitor_blocked,
+  });
 
   threadHead.hidden = false;
   composerDock.hidden = false;
@@ -354,13 +378,8 @@ async function openThread(conversationId: string): Promise<void> {
 
 function renderThread(messages: Message[]): void {
   threadInner.innerHTML = "";
-  if (messages.length > 0) {
-    const sep = document.createElement("div");
-    sep.className = "day-sep";
-    sep.innerHTML = `<span>${new Date(messages[0].created_at).toLocaleDateString([], { month: "short", day: "numeric" })}</span>`;
-    threadInner.appendChild(sep);
-  }
   lastThreadMessageId = 0;
+  lastThreadDay = null;
   for (const message of messages) appendThreadMessage(message);
   // Highlight the active search term across the whole history and jump to
   // the first hit, so the admin sees exactly where the match lives.
@@ -376,7 +395,19 @@ function renderThread(messages: Message[]): void {
   scrollThread();
 }
 
+/** Insert a "Aug 7" divider whenever a message lands on a new calendar day. */
+function maybeInsertThreadDaySep(iso: string): void {
+  const key = dayKey(iso);
+  if (key === lastThreadDay) return;
+  lastThreadDay = key;
+  const sep = document.createElement("div");
+  sep.className = "day-sep";
+  sep.innerHTML = `<span>${dayLabel(iso)}</span>`;
+  threadInner.appendChild(sep);
+}
+
 function appendThreadMessage(message: Message): HTMLElement {
+  maybeInsertThreadDaySep(message.created_at);
   lastThreadMessageId = Math.max(lastThreadMessageId, message.id);
   const el = createMessageEl({
     role: message.role,
@@ -449,6 +480,41 @@ async function resolveActive(): Promise<void> {
   const entry = inbox.find((e) => e.conversation_id === activeId);
   if (entry) entry.needs_attention = false;
   updateFilterCounts();
+  renderInbox();
+}
+
+async function toggleMute(): Promise<void> {
+  if (!activeId) return;
+  applyConversationState(await adminToggleMute(activeId));
+}
+
+async function toggleBlock(): Promise<void> {
+  if (!activeId) return;
+  applyConversationState(await adminToggleBlock(activeId));
+}
+
+/** Reflects mute/block state on the toggle buttons, the thread-head flags,
+ *  and the corresponding inbox row's mini-flags — all from one state object. */
+function applyConversationState(state: ConversationState): void {
+  muteBtn.classList.toggle("is-on", state.avatar_muted);
+  muteBtn.setAttribute("aria-pressed", String(state.avatar_muted));
+  muteBtn.title = state.avatar_muted
+    ? "Avatar paused — click to let it resume"
+    : "Pause the Avatar — only you reply";
+  mutedFlag.hidden = !state.avatar_muted;
+
+  blockBtn.classList.toggle("is-on", state.visitor_blocked);
+  blockBtn.setAttribute("aria-pressed", String(state.visitor_blocked));
+  blockBtn.title = state.visitor_blocked
+    ? "Visitor blocked — click to let them message again"
+    : "Block this visitor from messaging";
+  blockedFlag.hidden = !state.visitor_blocked;
+
+  const entry = inbox.find((e) => e.conversation_id === activeId);
+  if (entry) {
+    entry.avatar_muted = state.avatar_muted;
+    entry.visitor_blocked = state.visitor_blocked;
+  }
   renderInbox();
 }
 

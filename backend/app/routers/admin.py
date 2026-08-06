@@ -24,6 +24,7 @@ from ..models import (
     AdminMessageRequest,
     ChangePasswordRequest,
     ConversationResponse,
+    ConversationStateResponse,
     InboxEntry,
     LoginRequest,
     Message,
@@ -131,10 +132,13 @@ def open_thread(conversation_id: str):
     returns the updated rows — one Supabase round-trip (SPEC requirement).
     """
     rows = db.fetch_and_mark_read(conversation_id)
+    state = settings_store.conversation_state(conversation_id)
     return ConversationResponse(
         conversation_id=conversation_id,
         conversation_name=db.derive_conversation_name(rows),
         messages=rows,
+        avatar_muted=state["avatar_muted"],
+        visitor_blocked=state["visitor_blocked"],
     )
 
 
@@ -158,6 +162,41 @@ def post_human_message(conversation_id: str, request: AdminMessageRequest):
 def resolve(conversation_id: str):
     db.mark_resolved(conversation_id)
     return {"ok": True}
+
+
+@protected.post(
+    "/admin/conversations/{conversation_id}/mute",
+    response_model=ConversationStateResponse,
+)
+def toggle_mute(conversation_id: str):
+    """Pause the Avatar for this conversation: while on, the visitor gets no
+    automated reply of any kind (agent or instant FAQ) — only the human,
+    posting from admin, responds. Toggling back off resumes the Avatar, which
+    picks up full context from everything said while it was paused."""
+    state = settings_store.conversation_state(conversation_id)
+    try:
+        return settings_store.set_conversation_state(
+            conversation_id, avatar_muted=not state["avatar_muted"]
+        )
+    except settings_store.SettingsUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+
+
+@protected.post(
+    "/admin/conversations/{conversation_id}/block",
+    response_model=ConversationStateResponse,
+)
+def toggle_block(conversation_id: str):
+    """Block this visitor from sending any further messages — for abusive
+    visitors who exist only to waste API spend. Toggling back off lets them
+    message again."""
+    state = settings_store.conversation_state(conversation_id)
+    try:
+        return settings_store.set_conversation_state(
+            conversation_id, visitor_blocked=not state["visitor_blocked"]
+        )
+    except settings_store.SettingsUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
 
 
 router.include_router(protected)

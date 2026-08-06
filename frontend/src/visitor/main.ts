@@ -13,12 +13,14 @@ import { getCookie, setCookie } from "../lib/cookies";
 import {
   createMessageEl,
   createToolStatusEl,
+  dayKey,
+  dayLabel,
   formatTime,
   initialsFor,
   markToolStatusDone,
 } from "../lib/messages";
 import { renderMarkdown } from "../lib/markdown";
-import { RateLimitError, streamChat } from "../lib/sse";
+import { BlockedError, NameRequiredError, RateLimitError, streamChat } from "../lib/sse";
 import { initTheme } from "../lib/theme";
 import { maybeStartTour } from "./tour";
 
@@ -39,6 +41,7 @@ const typing = document.getElementById("typing") as HTMLElement;
 const composerInput = document.getElementById("composerInput") as HTMLTextAreaElement;
 const sendBtn = document.getElementById("sendBtn") as HTMLButtonElement;
 const nameField = document.getElementById("nameField") as HTMLInputElement;
+const nameFieldWrap = nameField.closest(".name-field") as HTMLElement;
 const keepChat = document.getElementById("keepChat") as HTMLInputElement;
 const resetBtn = document.getElementById("resetBtn") as HTMLButtonElement;
 const suggestRow = document.getElementById("suggestRow") as HTMLElement;
@@ -46,6 +49,7 @@ const attnBtn = document.getElementById("attnBtn") as HTMLButtonElement;
 
 let conversationId = "";
 let lastMessageId = 0;
+let lastDay: string | null = null;
 let lastActivity = Date.now();
 let sending = false;
 let pollTimer: number | undefined;
@@ -58,6 +62,7 @@ async function init(): Promise<void> {
   nameField.addEventListener("change", () =>
     localStorage.setItem(NAME_KEY, nameField.value.trim()),
   );
+  nameFieldWrap.addEventListener("animationend", () => nameFieldWrap.classList.remove("is-error"));
 
   keepChat.checked = getCookie(KEEP_COOKIE) !== "0";
   keepChat.addEventListener("change", () => {
@@ -103,6 +108,9 @@ async function init(): Promise<void> {
     composerInput.placeholder = `Message ${first}'s twin…  (type “Q2” for an instant answer)`;
     const chips = suggestRow.querySelectorAll("button");
     chips[chips.length - 1].textContent = `Can I talk to the real ${first}?`;
+    const noticeText = `Real replies from ${first} within 24h if needed — feel free to check back`;
+    (document.getElementById("replyNoticeText") as HTMLElement).textContent = noticeText;
+    (document.getElementById("replyNotice") as HTMLElement).title = noticeText;
   } catch {
     /* offline config — leave generic copy */
   }
@@ -125,7 +133,7 @@ async function init(): Promise<void> {
   const q = params.get("q");
   if (q && /^\d{1,2}$/.test(q)) {
     history.replaceState(null, "", location.pathname);
-    void send(`Q${q}`);
+    void send(`Q${q}`, { autoDeepLink: true });
   }
 
   schedulePoll();
@@ -148,15 +156,24 @@ function resetChat(): void {
 
 function renderHistory(messages: Message[]): void {
   intro.hidden = true;
-  const daySep = document.createElement("div");
-  daySep.className = "day-sep";
-  daySep.innerHTML = `<span>${formatTime(messages[0].created_at)}</span>`;
-  messagesEl.appendChild(daySep);
+  lastDay = null;
   for (const message of messages) appendMessage(message);
   scrollToLatest();
 }
 
+/** Insert a "Aug 7" divider whenever a message lands on a new calendar day. */
+function maybeInsertDaySep(iso: string | Date): void {
+  const key = dayKey(iso);
+  if (key === lastDay) return;
+  lastDay = key;
+  const sep = document.createElement("div");
+  sep.className = "day-sep";
+  sep.innerHTML = `<span>${dayLabel(iso)}</span>`;
+  messagesEl.appendChild(sep);
+}
+
 function appendMessage(message: Message): void {
+  maybeInsertDaySep(message.created_at);
   lastMessageId = Math.max(lastMessageId, message.id);
   const el = createMessageEl({
     role: message.role,
@@ -175,9 +192,22 @@ function instantTagFor(message: Message): string | undefined {
     : undefined;
 }
 
-async function send(raw: string): Promise<void> {
+async function send(raw: string, options: { autoDeepLink?: boolean } = {}): Promise<void> {
   const text = raw.trim();
   if (!text || sending) return;
+
+  // Mandatory name/initials — every message needs one so the inbox is never
+  // just "Visitor". The one exemption is the ?q=N auto-submit on page load,
+  // which fires before the visitor could have typed anything.
+  if (!nameField.value.trim() && !options.autoDeepLink) {
+    nameField.focus();
+    nameFieldWrap.classList.remove("is-error");
+    void nameFieldWrap.offsetWidth; // restart the shake animation on repeat attempts
+    nameFieldWrap.classList.add("is-error");
+    addSysNote("Please add your name or initials above before we can chat.");
+    return;
+  }
+
   sending = true;
   sendBtn.disabled = true;
   intro.hidden = true;
@@ -191,6 +221,7 @@ async function send(raw: string): Promise<void> {
   attnBtn.classList.remove("is-on");
   attnBtn.setAttribute("aria-pressed", "false");
 
+  maybeInsertDaySep(new Date());
   const visitorEl = createMessageEl({
     role: "visitor",
     content: text,
@@ -229,6 +260,7 @@ async function send(raw: string): Promise<void> {
       message: text,
       visitor_name: nameField.value.trim() || undefined,
       attention: attention || undefined,
+      auto_deep_link: options.autoDeepLink || undefined,
     })) {
       switch (event) {
         case "visitor_message": {
@@ -278,11 +310,17 @@ async function send(raw: string): Promise<void> {
   } catch (error) {
     typing.hidden = true;
     if (!streamed && avatarEl) avatarEl.remove();
-    addSysNote(
-      error instanceof RateLimitError
-        ? "You're sending messages too quickly — give it a few seconds and try again."
-        : "Connection hiccup — that message didn't go through. Please try again.",
-    );
+    if (error instanceof RateLimitError) {
+      addSysNote("You're sending messages too quickly — give it a few seconds and try again.");
+    } else if (error instanceof NameRequiredError) {
+      visitorEl.remove();
+      addSysNote("Please add your name or initials above before we can chat.");
+    } else if (error instanceof BlockedError) {
+      visitorEl.remove();
+      addSysNote("You're no longer able to send messages in this conversation.");
+    } else {
+      addSysNote("Connection hiccup — that message didn't go through. Please try again.");
+    }
   } finally {
     typing.hidden = true;
     sending = false;

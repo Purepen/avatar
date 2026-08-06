@@ -16,7 +16,7 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse, StreamingResponse
 from openai.types.responses import ResponseTextDeltaEvent
 
-from .. import config, db, rate_limit
+from .. import config, db, rate_limit, settings_store
 from ..agent import avatar_agent
 from ..models import ChatRequest, ConversationResponse
 from ..tools.faq import find_faq, parse_qn_shortcut
@@ -24,6 +24,16 @@ from ..tools.push import push
 from ..transcript import build_task_prompt
 
 router = APIRouter()
+
+# Fire-and-forget background tasks (e.g. the new-conversation push) need a
+# strong reference somewhere, or asyncio may garbage-collect them mid-flight.
+_background_tasks: set[asyncio.Task] = set()
+
+
+def _fire_and_forget(coro) -> None:
+    task = asyncio.create_task(coro)
+    _background_tasks.add(task)
+    task.add_done_callback(_background_tasks.discard)
 
 
 def _sse(event: str, data: dict) -> str:
@@ -36,6 +46,21 @@ def _clamp(message: str) -> str:
     return message[: config.MAX_MESSAGE_CHARS] + "\n" + config.TRUNCATION_NOTE
 
 
+async def _notify_new_conversation(who: str, content: str) -> None:
+    """Best-effort: a Pushover hiccup here must never surface to the visitor.
+
+    A short timeout bounds the worst case for a background thread-pool
+    worker — this notification is non-critical, unlike push_tool/attention
+    pushes, which the visitor is actively waiting on and keep the full 15s.
+    """
+    try:
+        await asyncio.to_thread(
+            push, f"[New conversation] {who}: {content[:300]}", 5
+        )
+    except Exception:
+        pass
+
+
 @router.post("/api/chat")
 async def chat(request: ChatRequest):
     if not rate_limit.allow(request.conversation_id):
@@ -44,9 +69,21 @@ async def chat(request: ChatRequest):
             content={"error": "rate_limited"},
         )
 
+    state = await asyncio.to_thread(
+        settings_store.conversation_state, request.conversation_id
+    )
+    if state["visitor_blocked"]:
+        return JSONResponse(status_code=403, content={"error": "blocked"})
+
     content = _clamp(request.message)
     visitor_name = (request.visitor_name or "").strip() or None
     faq_number = parse_qn_shortcut(request.message)
+
+    # Mandatory name/initials — except the ?q=N auto-submit on page load,
+    # which fires before the visitor has had a chance to type anything.
+    name_exempt = request.auto_deep_link and faq_number is not None
+    if not visitor_name and not name_exempt:
+        return JSONResponse(status_code=400, content={"error": "name_required"})
 
     visitor_row = await asyncio.to_thread(
         db.insert_message,
@@ -67,11 +104,24 @@ async def chat(request: ChatRequest):
                 "created_at": visitor_row["created_at"],
             },
         )
-        if faq_number is not None:
+        # Fetched once, up front: doubles as "is this conversation brand new"
+        # (exactly one row so far) and, on the agent path below, the transcript.
+        rows = await asyncio.to_thread(db.fetch_conversation, request.conversation_id)
+        is_new_conversation = len(rows) == 1
+        if state["avatar_muted"]:
+            yield _sse("meta", {"mode": "muted"})
+        elif faq_number is not None:
             yield _sse("meta", {"mode": "instant", "faq_number": faq_number})
         else:
             yield _sse("meta", {"mode": "agent"})
         try:
+            if is_new_conversation:
+                # Fire-and-forget: this is a side notification for the human,
+                # not part of answering the visitor — it must never add
+                # latency (or risk) to the actual reply below.
+                _fire_and_forget(
+                    _notify_new_conversation(visitor_name or "A visitor", content)
+                )
             if request.attention:
                 # The visitor pressed the attention toggle: ping the human
                 # directly, before (and regardless of) any model involvement.
@@ -82,7 +132,13 @@ async def chat(request: ChatRequest):
                     f"[Attention requested] {who}: {content[:500]}",
                 )
                 yield _sse("tool_result", {"tool": "attention_push"})
-            if faq_number is not None:
+
+            avatar_row = None
+            if state["avatar_muted"]:
+                # The human is handling this conversation live right now —
+                # stay silent so the visitor never gets two replies.
+                pass
+            elif faq_number is not None:
                 answer = find_faq(faq_number)
                 yield _sse("token", {"text": answer})
                 avatar_row = await asyncio.to_thread(
@@ -94,9 +150,6 @@ async def chat(request: ChatRequest):
                 )
             else:
                 yield _sse("meta", {"mode": "agent"})
-                rows = await asyncio.to_thread(
-                    db.fetch_conversation, request.conversation_id
-                )
                 task = build_task_prompt(rows, visitor_name=visitor_name)
                 result = Runner.run_streamed(avatar_agent, task)
                 text_parts: list[str] = []
@@ -127,9 +180,9 @@ async def chat(request: ChatRequest):
             yield _sse(
                 "done",
                 {
-                    "id": avatar_row["id"],
-                    "created_at": avatar_row["created_at"],
-                    "needs_attention": avatar_row["needs_attention"],
+                    "id": avatar_row["id"] if avatar_row else None,
+                    "created_at": avatar_row["created_at"] if avatar_row else None,
+                    "needs_attention": avatar_row["needs_attention"] if avatar_row else False,
                 },
             )
         except Exception as exc:  # surface a terminal error event to the client
