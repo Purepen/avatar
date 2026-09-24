@@ -4,13 +4,14 @@ I'm Micheal Olaniyi — an AI/ML Engineer and data professional based in Lagos, 
 
 ## What I do now
 
-- **Freelance AI/ML Engineer (since Aug 2024).** I build production-ready AI systems and multi-agent applications for clients. Highlights: a CFO AI Assistant with 95%+ accuracy on an advanced RAG pipeline; an AI Banking Assistant serving 70+ customers with secure 2FA authentication; an 80% improvement in RAG response precision; and real-time voice interaction with sub-2-second processing.
-- **Business Intelligence / CVM Manager at Smartcash PSB (Airtel), since Apr 2023.** I lead customer value management and business intelligence. I helped achieve a 68.9% increase in revenue-earning customers within 6 months, cut monthly churn by 30% with data-driven retention strategies, built Python automation that turned a full-day reporting process into a sub-minute one (a 1,440x efficiency improvement), and designed executive Power BI dashboards for real-time business metrics.
+- **Senior AI/ML Engineer at Technocrat IT (since Feb 2026, hybrid).** I lead AI engineering across Technocrat IT's startup products, designing and shipping AI agents that live inside client applications. I build intelligent customer support systems and business intelligence agents that query company databases, read images and PowerPoint files, and turn them into accurate dashboards and metrics. I also set up AI tooling and workflows for the developer team so they ship faster.
+- **Freelance AI/ML Engineer & Consultant (since Aug 2024).** I build production-ready AI systems and multi-agent applications for clients. Highlights: a CFO AI Assistant with 95%+ accuracy on an advanced RAG pipeline; an AI Banking Assistant serving 70+ customers with secure 2FA authentication; an 80% improvement in RAG response precision; and real-time voice interaction with sub-2-second processing.
 
 ## Career history
 
+- **Business Intelligence / CVM Manager, Smartcash PSB (Airtel) (Apr 2023 – May 2026)**: led customer value management and business intelligence. I helped achieve a 68.9% increase in revenue-earning customers within 6 months, cut monthly churn by 30% with data-driven retention strategies, built Python automation that turned a full-day reporting process into a sub-minute one (a 1,440x efficiency improvement), and designed executive Power BI dashboards for real-time business metrics.
 - **Data Analyst, Interswitch Group (Apr–Jun 2024)** — payments analytics: Tableau dashboards for transaction monitoring, SQL pipeline optimization, payment-trend analysis for strategic decisions.
-- **Data Analyst, Mustard (Mar–Jun 2023)** — fintech product analytics: stakeholder presentations that improved financial product adoption by 32%, Python data-cleaning automation that halved prep time, customer segmentation for targeted marketing.
+- **Data Analyst, Mustard (Mar 2022 – Jun 2023)** — fintech product analytics: stakeholder presentations that improved financial product adoption by 32%, Python data-cleaning automation that halved prep time, customer segmentation for targeted marketing.
 - **Data Analyst / Assistant Teacher, JAF College, Abeokuta (Jan 2021–Feb 2023)** — managed student performance data and reporting systems, taught secondary-school mathematics, and built automated grading systems.
 - **Virtual internships (2022)** — data analytics programs with PwC Legal Switzerland, Tata Group (Mumbai), and Accenture: legal case analysis, business dashboards, and stakeholder presentations.
 - **Statistical Officer, National Bureau of Statistics Nigeria (Sep 2019–Mar 2020)** — national field surveys and data validation. Where the data journey started.
@@ -31,8 +32,9 @@ I'm Micheal Olaniyi — an AI/ML Engineer and data professional based in Lagos, 
 
 ## Licences & certifications
 
-18 in total. AI engineering:
+19 in total. AI engineering:
 
+- Certificate of Recognition: Mentor, 3MTT Mentorship Program Cohort 3 (Data Science, AI & ML track) — Data Science Nigeria, WESOnline & 3MTT, Sep 2026. Over 8 weeks I guided a group of fellows from first principles to two shipped group projects, from churn prediction models to MamaCare, a full ML + GenAI maternal health app deployed live ([write-up](https://micheal.fly.dev/mamacare-mentorship.html), [repo](https://github.com/Purepen/Maternal_Health--mentorship--Project)).
 - [AI Engineer Production Track: Deploy LLMs & Agents at scale](https://www.udemy.com/certificate/UC-e38dc130-693c-42b6-9ddc-8b2276c480e8/) — Udemy, Jul 2026 (AWS, GCP, Azure, Vercel, MLOps, Bedrock, SageMaker, RAG, Agents, MCP)
 - [AI Automation Builder with n8n](https://drive.google.com/file/d/1wgv8RMhnP-eh8esaemk0_eMJ4XRldaKy/view) — Udemy, May 2026 (agents, voice agents and automations in n8n)
 - [AI/ML Engineer consulting assessment](https://drive.google.com/file/d/1840N2x6W5sU9qPtrNfROE0zNLUVNCjQM/view) — micro1 Recruiting, May 2026
