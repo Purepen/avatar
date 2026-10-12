@@ -28,10 +28,13 @@ WorldQuant University is a certificate, not a degree: Certificate in Applied Dat
 ## Projects I'm proud of
 
 1. **AI Banking Assistant (2025)** — voice-enabled banking system with 8 specialized agents, secure 2FA and real-time processing, serving 70+ users at sub-2-second response times. Python, FastAPI, AsyncIO, OpenAI GPT-4o-mini, Whisper, TTS-1. [Demo](https://youtu.be/Hvwg5XZ3TR0)
-2. **CFO AI Assistant v2 (2025)** — multi-agent financial intelligence for Nigerian bank CFOs with intelligent query routing, semantic search and a RAG pipeline at 95%+ accuracy. Claude Sonnet 4, LangChain, LangGraph, ChromaDB. [Demo](https://youtu.be/Hmk_OsMPNt0) (v1, 2024, used GPT-4 + FAISS — [repo](https://github.com/Purepen/CFO-ai-assistant))
+2. **CFO AI Assistant v2 (2025)** — multi-agent financial intelligence for Nigerian bank CFOs with intelligent query routing, semantic search and a RAG pipeline at 95%+ accuracy. Claude Sonnet 4, LangChain, LangGraph, ChromaDB. [Demo](https://youtu.be/Hmk_OsMPNt0) (v1, 2024, also ran on Claude Sonnet 4 with LangChain, ChromaDB and Sentence Transformers, three agents for SQL, RAG and web search; it never used GPT-4 — [repo](https://github.com/Purepen/CFO-ai-assistant))
 3. **AI-Powered Portfolio Website (2025)** — my own portfolio is an AI: a RAG-based conversational interface (Claude + OpenAI embeddings + Supabase pgvector) where visitors explore my projects, skills and experience through natural language. Next.js 15, TypeScript, Vercel AI SDK.
 4. **Credit Risk Model & Loan Application Approval (2024–2025)** — ML models for credit risk assessment and loan approval prediction. Scikit-learn, XGBoost. [Repo](https://github.com/Purepen/Loan_application_approval)
 5. **Customer Analytics Dashboard (2023)** — churn prediction and revenue analytics platform built during my Smartcash PSB work. Python, SQL, Power BI, Tableau.
+6. **Avatar, my digital twin (2026, live)** — the AI you're chatting with right now: trained on my real experience, with the option for me to jump into the conversation live from an admin dashboard. OpenAI Agents SDK, FastAPI, Supabase, TypeScript, streamed over SSE. [Repo](https://github.com/Purepen/avatar)
+7. **Research AI (2026, live)** — a free tool that helps students and professionals get unstuck at the start of a research project: choosing a topic, deriving a clear specification, and finding the right materials. Python, LLM, RAG. [Repo](https://github.com/Purepen/research-assistant)
+8. **Personal website (live)** — [micheal.fly.dev](https://micheal.fly.dev): my projects, write-ups, posts and certifications in one place.
 
 ## Licences & certifications
 
