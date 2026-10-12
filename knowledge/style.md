@@ -21,7 +21,7 @@ Building AI Agents with MCP and A2A (LinkedIn Learning): https://drive.google.co
 Career Essentials in Generative AI (Microsoft & LinkedIn): https://www.linkedin.com/learning/certificates/7fc629b7a7486c14740d0d77b343f897954f58ebffbd6da200a814094c067ff6
 Google Data Analytics Professional Certificate: https://drive.google.com/file/d/1_6hwvZkR5FiZ6tGVTxsW3YXnCcxQcXq7/view
 
-The full list of all 18 licences and certifications (with credential links) is in my profile knowledge.
+The full list of all 19 licences and certifications (with credential links) is in my profile knowledge.
 
 ## The age-old question
 
